@@ -2,19 +2,13 @@
 # Names: Alejandra, Weichen, Hang
 
 
-# -------------------------------------------------------------------
 # 1. Read the data
-# -------------------------------------------------------------------
 
 music_raw <- readLines("palestrina.txt")
-
-# Check the first few lines to make sure the file has loaded correctly.
-head(music_raw, 20)
+head(music_raw, 20) # Check
 
 
-# -------------------------------------------------------------------
 # 2. Clean the music data
-# -------------------------------------------------------------------
 
 # This function removes the extra information in the text file and turns the music into a single vector of notes and bar-line symbols.
 #
