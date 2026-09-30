@@ -1,6 +1,8 @@
-# Group members: Alejandra (sXXXXXXX), Weichen (sXXXXXXX), Hang (sXXXXXXX)
+# Practical 1: Music simulator
 
-# Contributions:
+# Group members: Alejandra Campo Archbold, Weihang Gu, Weichen Zhao
+
+# Contributions: <who did what, and roughly what % each>
 
 # Overview: a simple Markov model that learns from Palestrina's music
 # and generates new pieces. Steps: read and clean the data, turn notes
@@ -9,18 +11,21 @@
 
 
 # -------------------------------------------------------------------
-# 0. Read the data
+# 0. Read the data  (Task 3-4)
 # -------------------------------------------------------------------
+# Task: read palestrina.txt into R and look at the first lines.
 # Load the raw text file (one line per bar or info line).
 
-music_raw <- readLines("data/palestrina.txt")
+music_raw <- readLines("palestrina.txt")
 
 head(music_raw, 20)
 
 
 # -------------------------------------------------------------------
-# 1. Clean the data
+# 1. Clean the data  (Task 4a-4e)
 # -------------------------------------------------------------------
+# Task: write preprocess() to remove the header and "#" lines, add
+# " |" after each bar and " ||" after each piece, and split into notes.
 # Remove headers and info lines, mark bar ends ("|") and piece ends
 # ("||"), then split everything into single notes.
 
@@ -54,8 +59,9 @@ tail(music_clean, 10)
 
 
 # -------------------------------------------------------------------
-# 2. Turn notes into tokens
+# 2. Turn notes into tokens  (Task 5)
 # -------------------------------------------------------------------
+# Task: use unique() to get the notes and match() to get the tokens.
 # Each note becomes a number: its position in the list of unique notes.
 
 notes  <- unique(music_clean)
@@ -63,8 +69,10 @@ tokens <- match(music_clean, notes)
 
 
 # -------------------------------------------------------------------
-# 3. Build the sequence matrix
+# 3. Build the sequence matrix  (Task 6)
 # -------------------------------------------------------------------
+# Task: write make_matrix() to build an (n - mlag) x (mlag + 1) matrix
+# of shifted tokens, and remove rows with "||" in the first mlag columns.
 # Each row of M holds mlag notes plus the note that followed them.
 
 # Input:  tokens, all tokens; end, token of "||"; mlag, notes of context.
@@ -88,8 +96,10 @@ M <- make_matrix(tokens = tokens, end = which(notes == "||"), mlag = 4)
 
 
 # -------------------------------------------------------------------
-# 4. Choose the next note
+# 4. Choose the next note  (Task 7)
 # -------------------------------------------------------------------
+# Task: write next_note() to sample the next token from key, using
+# the mixture model with weights w and at most one call to sample().
 # Find rows of M matching the last 4, 3, 2 and 1 notes, weight each
 # group by w, and sample one of the notes that came next.
 
@@ -140,8 +150,10 @@ next_note <- function(key, M, w = rep(1, ncol(M) - 1)) {
 
 
 # -------------------------------------------------------------------
-# 5. Generate a piece
+# 5. Generate a piece  (Task 8)
 # -------------------------------------------------------------------
+# Task: write generate_music() to call next_note() repeatedly and
+# return the piece as one string of notes.
 # Add notes one at a time until "||", 8 bars, or 200 notes.
 
 # Input:  start, first token; M, sequence matrix; w, weights;
@@ -171,8 +183,10 @@ generate_music <- function(start, M, w = rep(1, ncol(M) - 1), notes) {
 
 
 # -------------------------------------------------------------------
-# 6. Compare weights
+# 6. Compare weights  (Task 8)
 # -------------------------------------------------------------------
+# Task: test w1 = (1,1,1,1), w2 = (1,0,0,0), w3 = (0,0,0,1) and
+# comment on the lag used and how it changes the music.
 # Generate one piece with each weight vector and compare them.
 
 set.seed(2026)
