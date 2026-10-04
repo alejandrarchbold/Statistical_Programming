@@ -1,310 +1,212 @@
-# Group members:3
-# Names: Alejandra, Weichen, Hang
+# Practical 1: Music simulator
+
+# Group members: Alejandra Campo Archbold, Weihang Gu, Weichen Zhao s2929481
+
+# Contributions: <who did what, and roughly what % each>
+
+# Overview: a simple Markov model that learns from Palestrina's music
+# and generates new pieces. Steps: read and clean the data, turn notes
+# into tokens, build a matrix of note sequences, predict notes one by
+# one, and compare different weights.
 
 
 # -------------------------------------------------------------------
-# 1. Read the data
+# 0. Read the data  (Task 3-4)
 # -------------------------------------------------------------------
+# Task: read palestrina.txt into R and look at the first lines.
+# Load the raw text file (one line per bar or info line).
 
 music_raw <- readLines("palestrina.txt")
 
-# Check the first few lines to make sure the file has loaded correctly.
 head(music_raw, 20)
 
 
 # -------------------------------------------------------------------
-# 2. Clean the music data
+# 1. Clean the data  (Task 4a-4e)
 # -------------------------------------------------------------------
+# Task: write preprocess() to remove the header and "#" lines, add
+# " |" after each bar and " ||" after each piece, and split into notes.
+# Remove headers and info lines, mark bar ends ("|") and piece ends
+# ("||"), then split everything into single notes.
 
-# This function removes the extra information in the text file and turns the music into a single vector of notes and bar-line symbols.
-#
-# music: raw character vector read from palestrina.txt
-#
-# The blank lines are useful here because they show where one piece finishes and the next one begins.
-
+# Input:  music, raw lines of the file.
+# Output: vector of notes, rests, "|" and "||".
 preprocess <- function(music) {
   
-  # Remove the composer, source and first blank line.
-  music <- music[-c(1:3)]
+  # Drop composer, source and blank line.
+  music <- music[-(1:3)]
   
-  # Remove information lines such as the title, time signature and key.
-  # We only remove lines which start with "#", so sharp notes such as C#5h are kept.
+  # Drop info lines. Check only the first character: "#" also means sharp.
   music <- music[substr(music, 1, 1) != "#"]
   
-  # Add a normal bar-line after each measure. If the next line is blank,
-  # the current measure is the end of a piece, so use a double bar-line.
-  for (i in 1:(length(music) - 1)) {
-    
-    if (music[i] != "") {
-      
-      if (music[i + 1] == "") {
-        music[i] <- paste0(music[i], " ||")
-      } else {
-        music[i] <- paste0(music[i], " |")
-      }
-    }
-  }
+  # A blank next line means the piece ends here.
+  next_is_blank <- c(music[-1] == "", TRUE)
+  is_bar <- music != ""
   
-  # Blank lines are no longer needed once the piece endings are marked.
-  music <- music[music != ""]
+  # "||" for the last bar of a piece, "|" for the rest.
+  ending <- ifelse(next_is_blank[is_bar], "||", "|")
+  music[is_bar] <- paste(music[is_bar], ending)
   
-  # Split each line into separate notes, rests and bar-line symbols.
-  music <- unlist(strsplit(music, " "))
-  
-  return(music)
+  # Remove blank lines and split bars into notes.
+  unlist(strsplit(music[is_bar], " "))
 }
-
 
 music_clean <- preprocess(music_raw)
 
+# Check: over 1 million notes, ending in "G3b ||".
+length(music_clean)
+tail(music_clean, 10)
+
 
 # -------------------------------------------------------------------
-# 3. Convert notes to tokens
+# 2. Turn notes into tokens  (Task 5)
 # -------------------------------------------------------------------
+# Task: use unique() to get the notes and match() to get the tokens.
+# Each note becomes a number: its position in the list of unique notes.
 
-# notes contains each unique note or symbol in the cleaned data.
-# tokens gives the position of each note in this vector.
-
-notes <- unique(music_clean)
-
+notes  <- unique(music_clean)
 tokens <- match(music_clean, notes)
 
 
 # -------------------------------------------------------------------
-# 4. Build the sequence matrix
+# 3. Build the sequence matrix  (Task 6)
 # -------------------------------------------------------------------
+# Task: write make_matrix() to build an (n - mlag) x (mlag + 1) matrix
+# of shifted tokens, and remove rows with "||" in the first mlag columns.
+# Each row of M holds mlag notes plus the note that followed them.
 
-# This function creates the matrix used by the Markov model.
-#
-# With mlag = 4, each row contains five adjacent tokens:
-# four previous tokens followed by the next token.
-#
-# tokens: integer vector representing the music
-# end: token number for "||"
-# mlag: maximum number of previous notes used by the model
-
+# Input:  tokens, all tokens; end, token of "||"; mlag, notes of context.
+# Output: matrix with mlag + 1 columns.
 make_matrix <- function(tokens, end, mlag = 4) {
   
   n <- length(tokens)
+  M <- matrix(NA_integer_, nrow = n - mlag, ncol = mlag + 1)
   
-  # Create an empty matrix with one extra column for the next token.
-  M <- matrix(NA,
-              nrow = n - mlag,
-              ncol = mlag + 1)
-  
-  # Shift the token vector by one position for each new column.
+  # Column j is the token vector shifted by j - 1.
   for (j in 1:(mlag + 1)) {
     M[, j] <- tokens[j:(n - mlag + j - 1)]
   }
   
-  # Remove rows where "||" occurs inside the first mlag columns.
-  # These rows would otherwise contain a sequence crossing two pieces.
-  bad_rows <- rowSums(
-    M[, 1:mlag, drop = FALSE] == end
-  ) > 0
-  
-  M <- M[!bad_rows, , drop = FALSE]
-  
-  return(M)
+  # Drop rows that run across two pieces ("||" before the last column).
+  crosses_pieces <- rowSums(M[, 1:mlag, drop = FALSE] == end) > 0
+  M[!crosses_pieces, , drop = FALSE]
 }
 
-
-M <- make_matrix(
-  tokens = tokens,
-  end = which(notes == "||"),
-  mlag = 4
-)
+M <- make_matrix(tokens = tokens, end = which(notes == "||"), mlag = 4)
 
 
 # -------------------------------------------------------------------
-# 5. Predict the next token
+# 4. Choose the next note  (Task 7)
 # -------------------------------------------------------------------
+# Task: write next_note() to sample the next token from key, using
+# the mixture model with weights w and at most one call to sample().
+# Find rows of M matching the last 4, 3, 2 and 1 notes, weight each
+# group by w, and sample one of the notes that came next.
 
-# next_note() chooses the next token using matches found in M.
-#
-# The model uses different amounts of recent history. For mlag = 4,
-# it considers the last 4, 3, 2 and 1 tokens. The vector w controls how much weight is given to each of these sequence lengths.
-
+# Input:  key, notes so far; M, sequence matrix; w, weight per key length
+#         (w[1] = longest key, w[mlag] = last note only).
+# Output: one token.
 next_note <- function(key, M, w = rep(1, ncol(M) - 1)) {
   
   mlag <- ncol(M) - 1
   
-  # Only the most recent tokens are needed if key is longer than mlag.
-  if (length(key) > mlag) {
-    key <- tail(key, mlag)
-  }
+  # Keep only the last mlag notes.
+  key <- tail(key, mlag)
+  key_len <- length(key)
   
-  next_tokens <- c()
+  candidates <- c()
   probs <- c()
   
-  key_length <- length(key)
-  
-  # Start with the longest available key and then shorten it one step at a time.
-  for (i in 1:key_length) {
+  # Try the full key first, then shorter ones.
+  for (i in 1:key_len) {
     
-    current_key <- key[i:key_length]
+    sub_key <- key[i:key_len]
     
-    # Find which columns of M should be compared with the current key.
-    mc <- mlag - length(current_key) + 1
+    # Columns to compare, also the index of the weight.
+    mc <- mlag - length(sub_key) + 1
     
-    # A value of zero means that the row matches the key exactly.
-    ii <- colSums(
-      !(t(M[, mc:mlag, drop = FALSE]) == current_key)
-    )
+    # Skip key lengths with no weight.
+    if (w[mc] == 0) next
     
-    matches <- which(ii == 0)
+    # Rows with 0 differences are matches.
+    n_diff  <- colSums(!(t(M[, mc:mlag, drop = FALSE]) == sub_key))
+    matches <- which(n_diff == 0)
     
+    # Save the next notes; share the weight equally between matches.
     if (length(matches) > 0) {
-      
-      # The last column contains the tokens which followed each match.
-      found_tokens <- M[matches, mlag + 1]
-      
-      # Pick the corresponding weight for this sequence length.
-      weight_pos <- mlag - length(current_key) + 1
-      
-      # Split this weight equally across all matches.
-      found_probs <- rep(
-        w[weight_pos] / length(matches),
-        length(matches)
-      )
-      
-      next_tokens <- c(next_tokens, found_tokens)
-      probs <- c(probs, found_probs)
+      candidates <- c(candidates, M[matches, mlag + 1])
+      probs <- c(probs, rep(w[mc] / length(matches), length(matches)))
     }
   }
   
-  # If there are no usable matches, sample from all tokens that appear in the final column of M.
-  if (length(next_tokens) == 0 || sum(probs) == 0) {
-    
-    result <- sample(M[, mlag + 1], 1)
-    
-  } else if (length(next_tokens) == 1) {
-    
-    # No sampling is needed if there is only one possible token.
-    result <- next_tokens[1]
-    
-  } else {
-    
-    # Otherwise choose one token using the calculated weights.
-    result <- sample(next_tokens, 1, prob = probs)
-  }
+  # No match: pick any note from the data.
+  if (length(candidates) == 0) return(sample(M[, mlag + 1], 1))
   
-  return(result)
+  # One match: no need to sample.
+  if (length(candidates) == 1) return(candidates)
+  
+  sample(candidates, 1, prob = probs)
 }
 
 
 # -------------------------------------------------------------------
-# 6. Generate a piece of music
+# 5. Generate a piece  (Task 8)
 # -------------------------------------------------------------------
+# Task: write generate_music() to call next_note() repeatedly and
+# return the piece as one string of notes.
+# Add notes one at a time until "||", 8 bars, or 200 notes.
 
-# This function repeatedly calls next_note() and adds each new token to the generated sequence.
-# Generation stops if:
-# - "||" is produced,
-# - eight bar-lines have been produced, or
-# - the sequence reaches 200 tokens.
-
-generate_music <- function(start, M,
-                           w = rep(1, ncol(M) - 1),
-                           notes) {
-  
-  generated <- start
+# Input:  start, first token; M, sequence matrix; w, weights;
+#         notes, note names.
+# Output: one string with the piece.
+generate_music <- function(start, M, w = rep(1, ncol(M) - 1), notes) {
   
   end_token <- which(notes == "||")
   bar_token <- which(notes == "|")
   
-  while (TRUE) {
+  piece <- start
+  n_bars <- 0
+  
+  repeat {
+    new <- next_note(key = piece, M = M, w = w)
+    piece <- c(piece, new)
     
-    new_note <- next_note(
-      key = generated,
-      M = M,
-      w = w
-    )
+    if (new == bar_token) n_bars <- n_bars + 1
     
-    generated <- c(generated, new_note)
-    
-    if (new_note == end_token) {
-      break
-    }
-    
-    if (sum(generated == bar_token) >= 8) {
-      break
-    }
-    
-    if (length(generated) >= 200) {
-      break
-    }
+    # Stopping rules.
+    if (new == end_token || n_bars >= 8 || length(piece) >= 200) break
   }
   
-  # Convert the token numbers back into note names and combine them into one character string.
-  result <- paste(
-    notes[generated],
-    collapse = " "
-  )
-  
-  return(result)
+  # Tokens back to note names.
+  paste(notes[piece], collapse = " ")
 }
 
 
 # -------------------------------------------------------------------
-# 7. Compare different lag weights
+# 6. Compare weights  (Task 8)
 # -------------------------------------------------------------------
+# Task: test w1 = (1,1,1,1), w2 = (1,0,0,0), w3 = (0,0,0,1) and
+# comment on the lag used and how it changes the music.
+# Generate one piece with each weight vector and compare them.
 
-# w1 uses all four sequence lengths. This combines the extra context from longer sequences with the larger number of matches usually available from shorter sequences.
+set.seed(2026)
+start_note <- which(notes == "F#5w")
 
+# w1: mixes all key lengths. Most Palestrina-like: smooth melody,
+# bars of mostly sensible length.
 w1 <- c(1, 1, 1, 1)
-
-
-# w2 only uses the longest four-token sequence. The prediction therefore depends on more recent context, but exact matches may be less common.
-
-w2 <- c(1, 0, 0, 0)
-
-
-# w3 only uses the most recent token. This gives more possible matches, but the model has less information about the notes before it.
-
-w3 <- c(0, 0, 0, 1)
-
-
-music_w1 <- generate_music(
-  start = 20,
-  M = M,
-  notes = notes,
-  w = w1
-)
-
-music_w2 <- generate_music(
-  start = 20,
-  M = M,
-  notes = notes,
-  w = w2
-)
-
-music_w3 <- generate_music(
-  start = 20,
-  M = M,
-  notes = notes,
-  w = w3
-)
-
-
-# Print the three examples for comparison. The results will change between runs because the model includes random sampling.
-
+music_w1 <- generate_music(start = start_note, M = M, w = w1, notes = notes)
 music_w1
+
+# w2: only 4-note keys. Short early keys get no weight, so notes are
+# random, and random keys rarely match later. Result: big jumps and
+# empty bars.
+w2 <- c(1, 0, 0, 0)
+music_w2 <- generate_music(start = start_note, M = M, w = w2, notes = notes)
 music_w2
+
+# w3: only the last note. Each step looks normal, but no memory of the
+# bar, so bar lengths are uneven and the melody wanders.
+w3 <- c(0, 0, 0, 1)
+music_w3 <- generate_music(start = start_note, M = M, w = w3, notes = notes)
 music_w3
-
-# Simple checks for the generated music
-
-check_music <- function(x) {
-  
-  x <- unlist(strsplit(x, " "))
-  
-  cat("Number of tokens:", length(x), "\n")
-  cat("Number of bars:", sum(x == "|"), "\n")
-  cat("Last symbol:", tail(x, 1), "\n")
-  cat("Within 200 tokens:", length(x) <= 200, "\n")
-  cat("Within 8 bars:", sum(x == "|") <= 8, "\n")
-}
-
-check_music(music_w1)
-check_music(music_w2)
-check_music(music_w3)
