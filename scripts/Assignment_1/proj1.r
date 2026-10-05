@@ -1,8 +1,10 @@
 # Practical 1: Music simulator
 
-# Group members: Alejandra Campo Archbold, Weihang Gu, Weichen Zhao s2929481
+# Group members: Alejandra Campo Archbold (s1234567), Weihang Gu (s1234567), Weichen Zhao (s2929481)
 
-# Contributions: <who did what, and roughly what % each>
+# Contributions: Alejandra worked on  ;
+# Weihang worked on  ;
+# Weichen worked on  .
 
 # Overview: a simple Markov model that learns from Palestrina's music
 # and generates new pieces. Steps: read and clean the data, turn notes
