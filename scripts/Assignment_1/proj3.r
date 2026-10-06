@@ -1,5 +1,5 @@
 # Group members:3
-# Names: Alejandra, Weichen, WeihangGu (s1234567)
+# Names: Alejandra, Weichen, WeihangGu (s123456)
 
 
 # 1. Read the data
