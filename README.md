@@ -1,5 +1,5 @@
 # Statistical_Programming
-Practicing and applying statistical concepts through a variety of programming exercises in R.
+Practicing statistical concepts through a variety of hands-on R programming exercises.
 
-* docs: contains the practical file for the proj1.r.
-* scripts: contains all the .R for the practical part.
+• docs/: Contains the assignment documentation for proj1.R
+• scripts/: Contains all .R scripts and datasets for the practical exercises.
