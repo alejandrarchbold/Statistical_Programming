@@ -38,6 +38,8 @@ tokens <- match(music_clean, notes)    # each note becomes its position in notes
 
 
 # make_matrix: each row has mlag notes and the note that came after them.
+# The matrix M has n−mlag rows. If we use an i-loop from 1 to n−mlag, it will be very slow.
+# The logic of this matrix is that each column is the original tokens sequence shifted back.
 make_matrix <- function(tokens, end, mlag = 4) {
   n <- length(tokens)                                      # number of notes
   M <- matrix(NA_integer_, n - mlag, mlag + 1)             # empty matrix
