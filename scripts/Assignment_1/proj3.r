@@ -1,5 +1,5 @@
 # Group members:3
-# Names: Alejandra, Weichen, Hang
+# Names: Alejandra, Weichen, Weihang (s12345)
 
 
 # 1. Read the data
