@@ -60,7 +60,6 @@ music_clean <- preprocess(music_raw)
 # tokens gives the position of each note in this vector.
 
 notes <- unique(music_clean)
-
 tokens <- match(music_clean, notes)
 
 
@@ -69,13 +68,10 @@ tokens <- match(music_clean, notes)
 # -------------------------------------------------------------------
 
 # This function creates the matrix used by the Markov model.
-#
 # With mlag = 4, each row contains five adjacent tokens:
 # four previous tokens followed by the next token.
-#
 # tokens: integer vector representing the music
 # end: token number for "||"
-# mlag: maximum number of previous notes used by the model
 
 make_matrix <- function(tokens, end, mlag = 4) {
   
@@ -86,12 +82,14 @@ make_matrix <- function(tokens, end, mlag = 4) {
               nrow = n - mlag,
               ncol = mlag + 1)
   
-  # Shift the token vector by one position for each new column.
+  
+  # The matrix M has n−mlag rows. If we use an i-loop from 1 to n−mlag, it will be very slow.
+  # The logic of this matrix is that each column is the original tokens sequence shifted back.
   for (j in 1:(mlag + 1)) {
     M[, j] <- tokens[j:(n - mlag + j - 1)]
   }
   
-  # Remove rows where "||" occurs inside the first mlag columns.
+  # Remove rows where "||" occurs inside the first mlag columns, but if "||" in the last column is fine, we want the model to learn when a piece should end.
   # These rows would otherwise contain a sequence crossing two pieces.
   bad_rows <- rowSums(
     M[, 1:mlag, drop = FALSE] == end
@@ -115,7 +113,6 @@ M <- make_matrix(
 # -------------------------------------------------------------------
 
 # next_note() chooses the next token using matches found in M.
-#
 # The model uses different amounts of recent history. For mlag = 4,
 # it considers the last 4, 3, 2 and 1 tokens. The vector w controls how much weight is given to each of these sequence lengths.
 
@@ -123,6 +120,7 @@ next_note <- function(key, M, w = rep(1, ncol(M) - 1)) {
   
   mlag <- ncol(M) - 1
   
+  # When predicting the next note, the most recent context carries the most information.
   # Only the most recent tokens are needed if key is longer than mlag.
   if (length(key) > mlag) {
     key <- tail(key, mlag)
@@ -249,6 +247,7 @@ w1 <- c(1, 1, 1, 1)
 
 
 # w2 only uses the longest four-token sequence. The prediction therefore depends on more recent context, but exact matches may be less common.
+# so it often falls back to random choice.
 
 w2 <- c(1, 0, 0, 0)
 
@@ -258,6 +257,7 @@ w2 <- c(1, 0, 0, 0)
 w3 <- c(0, 0, 0, 1)
 
 
+# The results change every run because the model uses random sampling.
 music_w1 <- generate_music(
   start = 20,
   M = M,
