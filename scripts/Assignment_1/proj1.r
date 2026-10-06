@@ -6,7 +6,7 @@
 # Weichen Zhao: generate_music, weight comparison (w1, w2, w3), testing (33.3%)
 # All three reviewed and tested the whole script together.
 
-URL project: https://github.com/alejandrarchbold/Statistical_Programming.git
+# GitHub URL project: https://github.com/alejandrarchbold/Statistical_Programming.git
 
 #-------------------------------------------------------------------------------
 # We learn from Palestrina's music and make new music with a Markov model.
