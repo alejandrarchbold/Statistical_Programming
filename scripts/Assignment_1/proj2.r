@@ -1,9 +1,9 @@
 # Practical 1: Music simulator
-# Group: Alejandra Campo Archbold, Weihang Gu, Weichen Zhao
+# Group: Alejandra Campo Archbold (s3023700), Weihang Gu(s2932201), Weichen Zhao(s2929481)
 # Contributions:
-# Alejandra Campo Archbold: preprocess, tokens, final comments and tidy-up
-# Weihang Gu: make_matrix and next_note
-# Weichen Zhao: generate_music, weight comparison (w1, w2, w3), testing
+# Alejandra Campo Archbold: preprocess, tokens, final comments and tidy-up (33.3%)
+# Weihang Gu: make_matrix and next_note (33.3%)
+# Weichen Zhao: generate_music, weight comparison (w1, w2, w3), testing (33.3%)
 # All three reviewed and tested the whole script together.
 
 #-------------------------------------------------------------------------------
