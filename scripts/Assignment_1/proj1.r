@@ -1,6 +1,7 @@
+# Statistical Programming
 # Practical 1: Music simulator
 
-# Group 3: Alejandra Campo Archbold (s3023700), Weihang Gu(s2932201), Weichen Zhao(s2929481)
+# Group 3: Alejandra Campo Archbold (s3023700), Weihang Gu (s2932201), Weichen Zhao (s2929481)
 
 # Contributions:
 
@@ -14,15 +15,15 @@
 #-------------------------------------------------------------------------------
 # Overview:
 
-# This script simulates new music using Markov model in the style of Giovanni Palestrina.
+# This script simulates new music using a Markov model in the style of Giovanni Palestrina.
 # We clean the text (preprocess), give each note a number (tokens), store all short note runs
 # in a matrix (make_matrix), and pick each new note from what followed the last notes (next_note).
-# In the process, we write the function generate_music that call next_note repeatedly until 
+# In the process, we write the function (generate_music) that calls next_note repeatedly until 
 # the piece ends, eight bars are made or 200 notes are reached.
 # Finally we compare three choices of mixture weights.
 #-------------------------------------------------------------------------------
 
-# setwd("put/your/local/repo/location/here")
+#setwd("put/your/local/repo/location/here")
 music_raw <- readLines("palestrina.txt")   # training data
 head(music_raw, 15)                        # look at the first 15 lines
 
@@ -35,7 +36,7 @@ preprocess <- function(music) {
   # How it works: a bar is the last of its piece when the next line is blank.
   
   music <- music[-(1:3)]                         # drop the 3 header lines: remove composer, source and blank line
-  music <- music[substr(music, 1, 1) != "#"]     # remove info lines, notes with #
+  music <- music[substr(music, 1, 1) != "#"]     # remove info lines (notes like F#4 stay)
   is_bar <- music != ""                          # lines that have notes (TRUE)
   last_bar <- c(music[-1] == "", TRUE)[is_bar]   # next line is blank, means last bar of a piece
   music[is_bar] <- paste(music[is_bar], ifelse(last_bar, "||", "|"))  # add || at the end of a piece, | otherwise
@@ -43,12 +44,12 @@ preprocess <- function(music) {
 }
 
 music_clean <- preprocess(music_raw)
-length(music_clean) # 
-tail(music_clean, 10) # 
+length(music_clean) # 1100877
+tail(music_clean, 10) # "D3h" "C3h" "G3w" "|"   "D3b" "|"   "G3b" "|"   "G3b" "||" 
 
 
 # - tokens:
-notes  <- unique(music_clean)          # list of uniques notes
+notes  <- unique(music_clean)          # list of unique notes
 tokens <- match(music_clean, notes)    # each note as its number in notes
 
 
@@ -78,9 +79,7 @@ next_note <- function(key, M, w = rep(1, ncol(M) - 1)) {
   # Inputs: key (notes so far), M (from make_matrix), w (weight of each key length).
   # Output: one note, as a number.
   # How it works: finds key and its shorter endings in M, then samples one note using w.
-  # picks the next token after key. w[1] is for the longest key,
-  # w[mlag] is for the last note only.
-  
+
   mlag <- ncol(M) - 1                           # notes to look back
   key <- tail(key, mlag)                        # keep only the latest notes
   k <- length(key)
@@ -109,19 +108,18 @@ generate_music <- function(start, M, w = rep(1, ncol(M) - 1), notes) {
   # Inputs: start (first note), M (from make_matrix), w (weights), notes (note names).
   # Output: the piece as one text, notes separated by spaces.
   # How it works: calls next_note until "||", 8 bars or 200 notes.
-  # makes a piece from start and returns it as text.
 
-  end_tok <- which(notes == "||")     # number for ||
-  bar_tok <- which(notes == "|")      # number for |
+  piece_end <- which(notes == "||")     # number for ||
+  bar_end <- which(notes == "|")        # number for |
   piece <- start
-  bars <- 0                           # bars made so far
+  bars <- 0                             # bars made so far
   repeat {
-    nxt <- next_note(piece, M, w)     # new note
-    piece <- c(piece, nxt)            # add it to the piece
-    if (nxt == bar_tok) bars <- bars + 1
-    if (nxt == end_tok || bars == 8 || length(piece) >= 200) break  # stop rules
+    new_note <- next_note(piece, M, w)     # new note
+    piece <- c(piece, new_note)            # add it to the piece
+    if (new_note == bar_end) bars <- bars + 1
+    if (new_note == piece_end || bars == 8 || length(piece) >= 200) break  # stop rules
   }
-  paste(notes[piece], collapse = " ") # tokens back to note names
+  paste(notes[piece], collapse = " ")     # tokens back to note names
 }
 
 
