@@ -23,3 +23,27 @@
 
 #setwd("put/your/local/repo/location/here")
 
+firsthit <- function(x, a) {
+  # Description:
+  # Input: x is a vector of 0s and 1s where 1=, a pattern
+  
+  k <- length(a)
+  n <- length(x)
+  
+  if (k == 0) {
+    stop("Add at least one element.")
+  }
+  
+  if (n < k) {
+    return(NA)
+  }
+  
+  for (m in k:n) {
+    w <- x[(m - k + 1):m]
+    
+    if (all(w == a)) {
+      return(m)
+    }
+  }
+  return(NA)
+}
