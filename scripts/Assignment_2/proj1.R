@@ -19,11 +19,11 @@
 # Overview
 #-----------------------------------------------------------------------
 
-# Two players choose patterns of heads (1) and tails (0).
-# They watch the same coin tosses, and the first pattern to appear wins.
+# This script studies a game in which two patterns compete on the
+# same stream of coin tosses. The first pattern to appear wins.
 # We simulate duels, estimate win probabilities and calculate exact
-# waiting times. We then compare patterns, find cycles and study
-# how the results change when the coin is biased.
+# waiting times. We compare patterns, identify non-transitive cycles
+# and investigate the effect of coin bias.
 
 
 #-----------------------------------------------------------------------
@@ -69,8 +69,8 @@ simulate_duels <- function(a, b, p=0.5, nreps=1, block=20){
   # Inputs: a and b (patterns), p (chance of heads),
   #         nreps (number of duels), block (tosses per batch).
   # Output: a matrix of winners and toss counts for all duels.
-  # How it works: each row is one duel. Both patterns use the
-  # same tosses in that row. Finished duels are no longer checked.
+  # How it works: each row represents one duel. Both patterns
+  # share the same tosses, and finished duels are no longer checked.
   
   k <- length(a)
   
@@ -116,14 +116,13 @@ simulate_duels <- function(a, b, p=0.5, nreps=1, block=20){
   
   while(anyNA(winner)){
     
-    # Generate tosses in batches. Finished rows are ignored later.
+    # Generate tosses in batches and ignore completed duels.
     new <- matrix(
       rbinom(nreps*block, size=1, prob=p),
       nrow=nreps,
       ncol=block
     )
     
-    # Check the tosses in order, so each duel stops at its first win.
     for(j in seq_len(block)){
       
       active <- which(is.na(winner))
@@ -134,24 +133,22 @@ simulate_duels <- function(a, b, p=0.5, nreps=1, block=20){
       
       current <- new[active, j]
       
-      # Keep only the most recent k tosses for each active duel.
+      # Update the sliding window for each unfinished duel.
       if(k > 1){
         recent[active, 1:(k-1)] <-
           recent[active, 2:k, drop=FALSE]
       }
       
       recent[active, k] <- current
-      
       tosses[active] <- tosses[active] + 1
       
-      # A full pattern needs at least k tosses.
+      # Only complete windows can match a pattern.
       ready <- active[tosses[active] >= k]
       
       if(length(ready) > 0){
         
         windows <- recent[ready, , drop=FALSE]
         
-        # Compare the ready windows with both patterns row by row.
         target_a <- matrix(
           a, nrow=length(ready), ncol=k, byrow=TRUE
         )
@@ -176,10 +173,10 @@ simulate_duels <- function(a, b, p=0.5, nreps=1, block=20){
 # Q2: duel
 
 duel <- function(a, b, p=0.5){
-  # Description: simulates one game between patterns a and b.
+  # Description: simulates one duel between patterns a and b.
   # Inputs: a and b (patterns), p (chance of heads).
   # Output: c(winner, tosses), with 1 for a and 0 for b.
-  # How it works: calls simulate_duels for one game.
+  # How it works: uses simulate_duels for one game.
   
   result <- simulate_duels(a, b, p, nreps=1)
   
@@ -208,7 +205,7 @@ ewait <- function(a, p=0.5){
   # Description: calculates the exact mean wait for pattern a.
   # Inputs: a (pattern), p (chance of heads).
   # Output: the expected number of tosses until a first appears.
-  # How it works: adds 1/P(prefix) for each self-overlap length.
+  # How it works: uses the pattern's self-overlap lengths.
   
   k <- length(a)
   
@@ -250,7 +247,7 @@ simwait <- function(a, p=0.5, nreps=3000, block=20){
   # Inputs: a (pattern), p (heads), nreps (runs),
   #         block (tosses per batch).
   # Output: the simulated waiting time for each run.
-  # How it works: adds tosses until firsthit finds the pattern.
+  # How it works: extends a stream until firsthit finds the pattern.
   
   waits <- integer(nreps)
   
@@ -259,13 +256,11 @@ simwait <- function(a, p=0.5, nreps=3000, block=20){
     x <- integer(0)
     hit <- NA
     
-    # Keep extending the stream until the pattern appears.
     while(is.na(hit)){
       
       new <- rbinom(block, size=1, prob=p)
       
       x <- c(x, new)
-      
       hit <- firsthit(x, a)
     }
     
@@ -282,15 +277,14 @@ pmat <- function(k, p=0.5, nreps=10000){
   # Description: estimates win probabilities for all pattern pairs.
   # Inputs: k (pattern length), p (heads), nreps (games per pair).
   # Output: matrix M, where M[i,j] is P(pattern i beats pattern j).
-  # How it works: generates all patterns in binary order and
-  # simulates each pair once. Reverse probabilities add to 1.
+  # How it works: generates patterns in binary order, from 000
+  # to 111 for k=3, and simulates each pair only once.
   
   if(length(k) != 1 || !is.numeric(k) ||
      !is.finite(k) || k < 1 || k != floor(k)){
     stop("k must be a positive integer.")
   }
   
-  # Generate all patterns and arrange them in binary order.
   patterns <- expand.grid(rep(list(0:1), k))
   patterns <- as.matrix(patterns)
   patterns <- patterns[, k:1, drop=FALSE]
@@ -303,7 +297,7 @@ pmat <- function(k, p=0.5, nreps=10000){
   rownames(M) <- labels
   colnames(M) <- labels
   
-  # Each pair needs only one simulation since reverse wins add to 1.
+  # Reverse win probabilities add to one.
   for(i in seq_len(n-1)){
     
     for(j in (i+1):n){
@@ -325,10 +319,10 @@ pmat <- function(k, p=0.5, nreps=10000){
 # Q5(a): best_reply
 
 best_reply <- function(M){
-  # Description: finds the best reply to each pattern.
+  # Description: finds the best reply to every pattern.
   # Input: M (win probability matrix).
-  # Output: pattern, best reply and estimated win probability.
-  # How it works: finds the highest value in each column.
+  # Output: each pattern's best reply and its win probability.
+  # How it works: finds the highest probability in each column.
   
   n <- ncol(M)
   
@@ -357,9 +351,9 @@ best_reply <- function(M){
 find_cycle <- function(M, cutoff=0.55){
   # Description: finds the shortest clear non-transitive cycle.
   # Inputs: M (win matrix), cutoff (minimum win probability).
-  # Output: the positions in a cycle, or NULL if none is found.
-  # How it works: tries cycles of length 3, 4 and so on.
-  # A cycle is complete when the last pattern beats the first.
+  # Output: the pattern indices in a cycle, or NULL.
+  # How it works: searches from shorter to longer cycles and
+  # checks whether the last pattern beats the starting pattern.
   
   n <- nrow(M)
   
@@ -370,7 +364,6 @@ find_cycle <- function(M, cutoff=0.55){
   beats <- M > cutoff
   beats[is.na(beats)] <- FALSE
   
-  # Start with shorter cycles before searching for longer ones.
   for(size in 3:n){
     
     for(start in seq_len(n)){
@@ -384,10 +377,9 @@ find_cycle <- function(M, cutoff=0.55){
         for(path in paths){
           
           last <- path[length(path)]
-          
           choices <- which(beats[last,])
           
-          # Each pattern can appear only once before closing a cycle.
+          # Do not repeat a pattern within the path.
           for(choice in choices){
             
             if(!(choice %in% path)){
@@ -406,7 +398,6 @@ find_cycle <- function(M, cutoff=0.55){
         }
       }
       
-      # The last pattern must also beat the starting pattern.
       for(path in paths){
         
         if(length(path) == size){
@@ -428,9 +419,9 @@ find_cycle <- function(M, cutoff=0.55){
 # Q5(b): show_cycle
 
 show_cycle <- function(M, cutoff=0.55){
-  # Description: prints a cycle and its win probabilities.
+  # Description: displays a non-transitive cycle.
   # Inputs: M (win matrix), cutoff (minimum win probability).
-  # Output: a labelled cycle and the probability of each win.
+  # Output: the cycle and the win probability of each step.
   # How it works: uses find_cycle and prints consecutive wins.
   
   cycle <- find_cycle(M, cutoff=cutoff)
@@ -450,7 +441,7 @@ show_cycle <- function(M, cutoff=0.55){
     b <- cycle[i+1]
     
     cat(labels[a], "beats", labels[b], ":",
-        round(M[a,b], 3), "\n")
+        round(M[a,b],3), "\n")
   }
 }
 
@@ -459,19 +450,17 @@ show_cycle <- function(M, cutoff=0.55){
 # Run code and analysis
 #-----------------------------------------------------------------------
 
-# A fixed seed makes the simulation results reproducible.
 set.seed(2026)
 
 
-# Q1: Check firsthit on simple streams
+# Q1: Test firsthit on simple streams
 
 x <- c(1,0,0,1,0,1,1)
 a <- c(1,0,1)
 
-cat("Q1: First hit of 101:", firsthit(x,a), "(expected 6)\n")
+cat("Q1: First hit of 101:", firsthit(x,a), "\n")
 cat("Q1: Pattern 111 absent:", firsthit(x,c(1,1,1)), "\n")
 cat("Q1: Short stream:", firsthit(c(1,0),a), "\n")
-
 
 # Q2: Simulate one duel
 
@@ -484,17 +473,12 @@ cat("\nQ2: Duel between 101 and 011\n")
 print(result)
 
 
-# Q3: Estimate the chance that HHH beats THH
+# Q3: Estimate the win probability
 
 p_fair <- pwin(c(1,1,1), c(0,1,1))
-p_bias <- pwin(c(1,1,1), c(0,1,1), p=0.7)
 
-cat("\nQ3: Win probability estimates\n")
+cat("\nQ3: Win probability estimate\n")
 cat("P(HHH beats THH), p=0.5:", round(p_fair,3), "\n")
-cat("P(HHH beats THH), p=0.7:", round(p_bias,3), "\n")
-
-# The exact probabilities for this pair are 0.125 and 0.343.
-
 
 # Q4: Compare exact and simulated waiting times
 
@@ -534,16 +518,15 @@ print(comparison4, row.names=FALSE)
 M <- pmat(k=3, p=0.5, nreps=10000)
 
 
-# Q5(a): Find the best reply to every pattern
+# Q5(a): Best replies
 
-cat("\nQ5(a): Best replies, p=0.5\n")
+cat("\nQ5(a): Best replies\n")
 print(best_reply(M), row.names=FALSE)
 
 
-# Q5(b): Find near-ties and a non-transitive cycle
+# Q5(b): Nearly even pairs and non-transitive cycles
 
-# An estimate within 0.03 of 0.5 is treated as nearly even.
-# upper.tri selects each unordered pair only once.
+# Treat estimates within 0.03 of 0.5 as nearly even.
 tie_pos <- which(
   upper.tri(M) & abs(M-0.5) < 0.03,
   arr.ind=TRUE
@@ -555,15 +538,14 @@ ties <- data.frame(
   p_a_wins=round(M[tie_pos],3)
 )
 
-cat("\nQ5(b): Approximately even pairs\n")
+cat("\nQ5(b): Nearly even pairs\n")
 print(ties, row.names=FALSE)
 
-# Search different cycle lengths instead of assuming three patterns.
-cat("\nQ5(b): Shortest clear cycle, p=0.5\n")
+cat("\nQ5(b): Non-transitive cycle\n")
 show_cycle(M, cutoff=0.55)
 
 
-# Q5(c): Compare individual waits and head-to-head results
+# Q5(c): Compare waiting times and head-to-head wins
 
 patterns3 <- as.matrix(expand.grid(rep(list(0:1),3)))
 patterns3 <- patterns3[,3:1,drop=FALSE]
@@ -586,16 +568,16 @@ waiting_rank <- waiting_rank[
 cat("\nQ5(c): Ranking by expected waiting time\n")
 print(waiting_rank, row.names=FALSE)
 
-# Equal expected waits do not imply equal head-to-head chances.
-cat("\nQ5(c): TTH against THH\n")
+# Quantify the difference between waiting times and duel outcomes.
+cat("\nQ5(c): Head-to-head comparison\n")
 cat("Expected wait of TTH:", ewait(c(0,0,1)), "\n")
 cat("Expected wait of THH:", ewait(c(0,1,1)), "\n")
 cat("P(TTH beats THH):", round(M["001","011"],3), "\n")
 
 
-# Q6: Plot duel duration and Monte Carlo variation
+# Q6: Visualise duel duration and Monte Carlo variability
 
-# Plot 1: empirical distribution of tosses until a winner.
+# Plot 1: empirical distribution of duel duration
 games <- simulate_duels(c(1,1,1), c(0,1,1), nreps=10000)
 
 duration <- games[,"tosses"]
@@ -610,13 +592,13 @@ par(mfrow=c(1,2))
 plot(xval, cumprob, type="s", ylim=c(0,1),
      xlab="Number of tosses",
      ylab="Cumulative probability",
-     main="Duel length: HHH vs THH")
+     main="Duel duration: HHH vs THH")
 
 lines(c(med,med), c(0,1), col=2, lty=2)
 text(med, 0.55, paste("Median =",med), pos=4, col=2)
 
 
-# Plot 2: 50 separate estimates of P(THH beats HHH).
+# Plot 2: variation across independent simulation runs
 estimates <- numeric(50)
 
 for(i in seq_len(50)){
@@ -637,7 +619,7 @@ text(25, reference+0.02, "Exact value = 0.875", col=2)
 par(mfrow=c(1,1))
 
 
-# Q7: Compare the game when the coin is biased
+# Q7: Investigate the effect of coin bias
 
 for(bias in c(0.25,0.7)){
   
@@ -650,18 +632,15 @@ for(bias in c(0.25,0.7)){
   show_cycle(M_bias, cutoff=0.55)
 }
 
-# Bias changes the best replies.
-# For example, 000 becomes the best reply to 001 when p=0.25,
-# rather than 100 for a fair coin.
-# When p=0.7, 110 becomes the best reply to 010 rather than 001.
-# Biased coins can have clear three-pattern cycles.
+# Coin bias changes which patterns give the strongest replies.
+# Non-transitive cycles remain, although their structure changes.
 
 
 #-----------------------------------------------------------------------
 # Conclusion
 #-----------------------------------------------------------------------
 
-# TTH and THH have equal mean waiting times, but TTH usually wins
-# their direct duel. The patterns use the same toss stream, so the
-# waiting times are dependent. Ranking patterns by their separate
-# waiting times can therefore give the wrong head-to-head answer.
+# Isolated expected waiting times do not determine duel win
+# probabilities. Both players observe the same toss stream, so their
+# waiting times are dependent. Comparing separate waiting-time
+# summaries ignores this dependence and can give misleading rankings.
