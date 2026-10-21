@@ -62,31 +62,31 @@ firsthit <- function(x, a) {
 }
 
 
-# Shared simulation function for Q2, Q3 and Q4
+# Shared simulation function for Question 2, Question 3 and Question 4
 
-race <- function(pats, p = 0.5, nreps = 1, block = 20) {
+race <- function(l_patterns, p = 0.5, nreps = 1, block = 20) {
   # Description: simulates coin streams until a pattern appears.
-  # Inputs: pats (list of patterns), p (chance of heads),
+  # Inputs: l_patterns (list of patterns), p (chance of heads),
   #         nreps (number of streams), block (batch size).
   # Output: matrix containing winner indices and toss counts.
   # How it works: checks patterns using a sliding window.
   #         Only unfinished streams receive new blocks.
   
-  # Check that pats is a non-empty list.
-  if (!is.list(pats) || length(pats) == 0) {
-    stop("pats must be a non-empty list.")
+  # Check that l_patterns is a non-empty list.
+  if (!is.list(l_patterns) || length(l_patterns) == 0) {
+    stop("the patterns must be a non-empty list.")
   }
   
-  k <- length(pats[[1]])
+  k <- length(l_patterns[[1]])
   
   if (k == 0) {
-    stop("Patterns cannot be empty.")
+    stop("Patterns cannot be empty. Add 0/1 pattern.")
   }
   
   # Check each pattern.
-  for (i in seq_along(pats)) {
+  for (i in seq_along(l_patterns)) {
     
-    a <- pats[[i]]
+    a <- l_patterns[[i]]
     
     if (!is.numeric(a) || length(a) != k ||
         anyNA(a) || !all(a %in% c(0, 1))) {
@@ -96,7 +96,7 @@ race <- function(pats, p = 0.5, nreps = 1, block = 20) {
     # Check that no two patterns are identical.
     if (i > 1) {
       for (j in seq_len(i - 1)) {
-        if (all(a == pats[[j]])) {
+        if (all(a == l_patterns[[j]])) {
           stop("Patterns must be different.")
         }
       }
@@ -169,9 +169,9 @@ race <- function(pats, p = 0.5, nreps = 1, block = 20) {
       windows <- recent[ready, , drop = FALSE]
       
       # Compare the window with each pattern.
-      for (q in seq_along(pats)) {
+      for (q in seq_along(l_patterns)) {
         
-        a <- pats[[q]]
+        a <- l_patterns[[q]]
         
         target <- matrix(
           a,
@@ -280,7 +280,7 @@ simwait <- function(a, p = 0.5, nreps = 3000) {
 }
 
 
-# Q5: all_patterns
+# Question 5: all_patterns
 
 all_patterns <- function(k) {
   # Description: generates all patterns of length k.
