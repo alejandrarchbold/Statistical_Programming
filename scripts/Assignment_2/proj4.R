@@ -12,8 +12,7 @@
 # - Weihang Gu: []
 # - Weichen Zhao: []
 #
-# GitHub URL:
-
+# GitHub URL: https://github.com/alejandrarchbold/Statistical_Programming.git
 
 
 #-----------------------------------------------------------------------
@@ -32,7 +31,7 @@
 #-----------------------------------------------------------------------
 
 
-# Q1: firsthit
+# Question 1: firsthit
 
 firsthit <- function(x, a) {
   # Description: finds the first occurrence of a in x.
@@ -44,7 +43,7 @@ firsthit <- function(x, a) {
   n <- length(x)
   
   if (k == 0) {
-    stop("Please enter a non-empty pattern.")
+    stop("Please enter a 0/1 pattern.")
   }
   
   if (n < k) {
@@ -195,7 +194,7 @@ race <- function(pats, p = 0.5, nreps = 1, block = 20) {
 }
 
 
-# Q2: duel
+# Question 2: duel
 
 duel <- function(a, b, p = 0.5) {
   # Description: simulates one duel between a and b.
@@ -212,7 +211,7 @@ duel <- function(a, b, p = 0.5) {
 }
 
 
-# Q3: pwin
+# Question 3: pwin
 
 pwin <- function(a, b, p = 0.5, nreps = 10000) {
   # Description: estimates the probability that a beats b.
@@ -226,7 +225,7 @@ pwin <- function(a, b, p = 0.5, nreps = 10000) {
 }
 
 
-# Q4: ewait
+# Question 4: ewait
 
 ewait <- function(a, p = 0.5) {
   # Description: calculates the exact mean waiting time for a.
@@ -267,7 +266,7 @@ ewait <- function(a, p = 0.5) {
 }
 
 
-# Q4: simwait
+# Question 4: simwait
 
 simwait <- function(a, p = 0.5, nreps = 3000) {
   # Description: simulates waiting times for a single pattern.
@@ -302,7 +301,7 @@ all_patterns <- function(k) {
 }
 
 
-# Q5: label
+# Question 5: label
 
 label <- function(a) {
   # Description: converts a binary pattern to H/T notation.
@@ -314,7 +313,7 @@ label <- function(a) {
 }
 
 
-# Q5: pmat
+# Question 5: pmat
 
 pmat <- function(k, p = 0.5, nreps = 10000) {
   # Description: estimates win probabilities for all pattern pairs.
@@ -350,7 +349,7 @@ pmat <- function(k, p = 0.5, nreps = 10000) {
 }
 
 
-# Q5(a): best_reply
+# Question 5(a): best_reply
 
 best_reply <- function(M) {
   # Description: finds the best reply to each pattern.
@@ -380,7 +379,7 @@ best_reply <- function(M) {
 }
 
 
-# Q5(b): even_pairs
+# Question 5(b): even_pairs
 
 even_pairs <- function(M, tol = 0.03) {
   # Description: finds pairs with nearly equal win probabilities.
@@ -403,7 +402,7 @@ even_pairs <- function(M, tol = 0.03) {
 }
 
 
-# Q5(b): find_cycle
+# Question 5(b): find_cycle
 
 find_cycle <- function(M, cutoff = 0.55) {
   # Description: finds a shortest clear non-transitive cycle.
@@ -468,7 +467,7 @@ find_cycle <- function(M, cutoff = 0.55) {
 }
 
 
-# Q5(b): show_cycle
+# Question 5(b): show_cycle
 
 show_cycle <- function(M, cutoff = 0.55) {
   # Description: displays a non-transitive cycle.
@@ -512,14 +511,16 @@ start_time <- proc.time()["elapsed"]
 set.seed(2026)
 
 
-# Q1: Test firsthit on simple streams.
+# Question 1: Test firsthit.
 
-x <- c(1, 0, 0, 1, 0, 1, 1)
+x <- c(1, 0, 0, 1, 0, 1, 1, 1, 0)
 a <- c(1, 0, 1)
+x1 <- c()
 
 cat("Q1: First hit of HTH:", firsthit(x, a), "\n")
 cat("Q1: HHH absent:", firsthit(x, c(1, 1, 1)), "\n")
 cat("Q1: Short stream:", firsthit(c(1, 0), a), "\n")
+cat("Q1: error:", firsthit(x1, a), "\n")
 
 
 # Q2: Simulate one duel.
