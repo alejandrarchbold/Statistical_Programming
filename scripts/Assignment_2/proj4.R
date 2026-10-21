@@ -8,7 +8,7 @@
 # Weichen Zhao (s2929481)
 #
 # Contributions:
-# - Alejandra Campo Archbold: []
+# - Alejandra Campo Archbold: 33% [Designed the initial questions, optimized data plots, and defined variables for the race share simulation]
 # - Weihang Gu: []
 # - Weichen Zhao: []
 #
