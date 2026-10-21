@@ -477,6 +477,8 @@ show_cycle <- function(M, cutoff = 0.55) {
 # Tests and Simulations
 #-----------------------------------------------------------------------
 
+start_time <- proc.time()["elapsed"]
+
 set.seed(2026)
 
 
@@ -567,12 +569,11 @@ print(even_pairs(M), row.names = FALSE)
 cat("\nQ5(b): Shortest non-transitive cycle\n")
 show_cycle(M)
 
-# The ten even pairs remove possible steps. Among the patterns with
-# clear wins, every triangle A -> B -> C -> A needs one of these
-# even pairs as a step (for example TTH/HHT and THH/HTT, the
-# opposite corners of the cycle found), so no cycle of length 3
-# exists. The shortest clear cycle has length 4, with steps won
-# with probability between 2/3 and 3/4.
+# Any three patterns either include an evenly matched pair or are
+# transitive (one of them beats both others), so there is no cycle
+# of length 3. In the cycle found, the opposite corners TTH/HHT and
+# THH/HTT are even pairs, which is why it needs four patterns. Each
+# step is won with probability between 2/3 and 3/4.
 
 
 # Question 5(c): Compare waiting times with duel performance.
@@ -698,6 +699,9 @@ for (bias in c(0.25, 0.7)) {
 
   cat("\nQ7: Non-transitive cycle for p =", bias, "\n")
   show_cycle(M_bias)
+
+  cat("\nQ7: Cycle with every step above 0.6 for p =", bias, "\n")
+  show_cycle(M_bias, cutoff = 0.6)
 }
 
 # With a biased coin the best replies change and become uneven. For
@@ -707,11 +711,12 @@ for (bias in c(0.25, 0.7)) {
 # HHH drops from 0.875 to about 0.66.
 # With a fair coin, the symmetry between H and T makes many pairs
 # exactly even, which forces the shortest cycle to have length 4.
-# The bias breaks these ties, so cycles of length 3 appear. However
+# The bias breaks most of these ties (only THH/HHT stays close, at
+# about 0.51, for p = 0.7), so cycles of length 3 appear. However
 # non-transitivity becomes weaker: some steps of these cycles are
-# narrow wins (about 0.57), and if a clear win must exceed 0.6 there
-# is no cycle at all for p = 0.25, while the fair-coin cycle still
-# exists with every step above 0.65.
+# narrow wins (about 0.57). If every step must exceed 0.6, there is
+# no cycle for p = 0.25 and only a cycle of length 4 for p = 0.7,
+# while the fair-coin cycle has every step above 0.65.
 
 
 #-----------------------------------------------------------------------
@@ -728,6 +733,7 @@ for (bias in c(0.25, 0.7)) {
 # as independent when they are not, and leads to confident but wrong
 # conclusions. The same hazard appears whenever quantities that share
 # a common source of randomness are summarised one at a time.
+
 
 #-----------------------------------------------------------------------
 # Running time
