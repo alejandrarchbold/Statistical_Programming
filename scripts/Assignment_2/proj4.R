@@ -9,8 +9,10 @@
 # Contributions:
 # - Alejandra Campo Archbold: 33% [designed the question structure, the
 #   shared simulation function race and the plots]
-# - Weihang Gu: []
-# - Weichen Zhao: []
+# - Weihang Gu: 33% [integrated the code, probability matrix,
+#   best replies and non-transitive cycle analysis]
+# - Weichen Zhao: 33% [waiting-time and coin-bias analysis,
+#   additional plot improvements, testing and final validation]
 #
 # GitHub URL: https://github.com/alejandrarchbold/Statistical_Programming.git
 
