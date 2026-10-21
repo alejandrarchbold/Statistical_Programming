@@ -518,9 +518,9 @@ a <- c(1, 0, 1)
 x1 <- c()
 
 cat("Q1: First hit of HTH:", firsthit(x, a), "\n")
-cat("Q1: HHH absent:", firsthit(x, c(1, 1, 1)), "\n")
+cat("Q1: HHH first appears at toss 8:", firsthit(x, c(1, 1, 1)), "\n")
 cat("Q1: Short stream:", firsthit(c(1, 0), a), "\n")
-cat("Q1: error:", firsthit(x1, a), "\n")
+cat("Q1: empty stream, test NA:", firsthit(x1, a), "\n")
 
 
 # Question 2: Simulate one duel.
