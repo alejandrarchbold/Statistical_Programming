@@ -503,7 +503,7 @@ show_cycle <- function(M, cutoff = 0.55) {
 
 
 #-----------------------------------------------------------------------
-# Run code and analysis
+# Tests and Simulations
 #-----------------------------------------------------------------------
 
 start_time <- proc.time()["elapsed"]
@@ -523,22 +523,22 @@ cat("Q1: Short stream:", firsthit(c(1, 0), a), "\n")
 cat("Q1: error:", firsthit(x1, a), "\n")
 
 
-# Q2: Simulate one duel.
+# Question 2: Simulate one duel.
 
 cat("\nQ2: One duel between HTH and THH\n")
 
 print(duel(c(1, 0, 1), c(0, 1, 1)))
 
 
-# Q3: Estimate the win probability.
+# Question 3: Estimate the win probability.
 
 p_fair <- pwin(c(1, 1, 1), c(0, 1, 1))
 
 cat("\nQ3: Win probability estimate\n")
-cat("P(HHH beats THH):", round(p_fair, 3), "\n")
+cat("P(HHH beats THH):", round(p_fair, 4), "\n")
 
 
-# Q4: Compare exact and simulated waiting times.
+# Question 4: Compare exact and simulated waiting times.
 
 patterns4 <- list(
   c(1, 1, 1),
@@ -570,18 +570,18 @@ cat("\nQ4: Exact and simulated waiting times\n")
 print(comparison4, row.names = FALSE)
 
 
-# Q5: Construct the fair-coin win probability matrix.
+# Question 5: Construct the fair-coin win probability matrix.
 
 M <- pmat(k = 3, p = 0.5, nreps = 10000)
 
 
-# Q5(a): Best replies.
+# Question 5(a): Best replies.
 
 cat("\nQ5(a): Best replies\n")
 print(best_reply(M), row.names = FALSE)
 
 
-# Q5(b): Nearly even pairs and a non-transitive cycle.
+# Question 5(b): Nearly even pairs and a non-transitive cycle.
 
 cat("\nQ5(b): Nearly even pairs\n")
 print(even_pairs(M), row.names = FALSE)
@@ -590,7 +590,7 @@ cat("\nQ5(b): Shortest non-transitive cycle\n")
 show_cycle(M)
 
 
-# Q5(c): Compare waiting times with duel performance.
+# Question 5(c): Compare waiting times with duel performance.
 
 patterns3 <- all_patterns(3)
 waits3 <- numeric(nrow(patterns3))
@@ -621,7 +621,7 @@ cat(
 )
 
 
-# Q6: Duel duration and Monte Carlo variation.
+# Question 6: Duel duration and Monte Carlo variation.
 
 a6 <- c(0, 1, 1)
 b6 <- c(1, 1, 1)
@@ -727,7 +727,7 @@ layout(1)
 par(oldpar)
 
 
-# Q7: Investigate the effect of coin bias.
+# Question 7: Investigate the effect of coin bias.
 
 for (bias in c(0.25, 0.7)) {
   
